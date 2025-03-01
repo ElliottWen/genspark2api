@@ -1,6 +1,10 @@
 package model
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 type OpenAIChatCompletionRequest struct {
 	Model    string              `json:"model"`
@@ -205,4 +209,29 @@ func (r *OpenAIChatCompletionRequest) GetUserContent() []string {
 	}
 
 	return userContent
+}
+
+// MergeMessagesIntoUser 将所有消息合并到一个user消息中
+func (r *OpenAIChatCompletionRequest) MergeMessagesIntoUser() {
+	if len(r.Messages) == 0 {
+		return
+	}
+	
+	var mergedContent string
+	for _, msg := range r.Messages {
+		content, ok := msg.Content.(string)
+		if !ok {
+			continue
+		}
+		// 添加角色前缀
+		mergedContent += fmt.Sprintf("%s: %s\n", msg.Role, content)
+	}
+	
+	// 创建新的合并后的消息
+	r.Messages = []OpenAIChatMessage{
+		{
+			Role:    "user",
+			Content: strings.TrimSpace(mergedContent),
+		},
+	}
 }
